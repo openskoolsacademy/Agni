@@ -1,0 +1,42 @@
+{
+  "version": 2,
+
+  "buildCommand": "npm run build:widget",
+
+  "functions": {
+    "api/index.ts": {
+      "runtime": "@vercel/node@3",
+      "maxDuration": 30,
+      "memory": 512,
+      "includeFiles": "backend/**"
+    }
+  },
+
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api" },
+    { "source": "/chatbot.js", "destination": "/api" },
+    { "source": "/health",     "destination": "/api" },
+    { "source": "/demo",       "destination": "/api" }
+  ],
+
+  "headers": [
+    {
+      "source": "/chatbot.js",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=300, s-maxage=600" }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,Authorization,X-Requested-With" }
+      ]
+    }
+  ],
+
+  "outputDirectory": "frontend/dist"
+}

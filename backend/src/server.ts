@@ -96,13 +96,34 @@ app.use('/api/analytics', analyticsRoutes);
 // Global Error Handler
 app.use(errorHandler);
 
-// Start Server
-async function start() {
-  try {
-    await initDatabase();
+// Database initialization promise (awaited once, cached for serverless reuse)
+let dbReady: Promise<void> | null = null;
+export function ensureDatabase(): Promise<void> {
+  if (!dbReady) {
+    dbReady = initDatabase().then(() => {
+      console.log('✅ Database initialized.');
+    });
+  }
+  return dbReady;
+}
 
-    app.listen(config.port, () => {
-      console.log(`
+// Export the Express app for Vercel serverless functions
+export { app };
+export default app;
+
+// Start Server (only when run directly, not when imported as a module)
+const isDirectRun =
+  typeof process !== 'undefined' &&
+  process.argv[1] &&
+  (process.argv[1].endsWith('server.ts') || process.argv[1].endsWith('server.js'));
+
+if (isDirectRun) {
+  (async () => {
+    try {
+      await ensureDatabase();
+
+      app.listen(config.port, () => {
+        console.log(`
 ===========================================================
 🤖 AI Chatbot Platform Backend Running
 ===========================================================
@@ -112,12 +133,11 @@ async function start() {
 💎 Gemini Model:   ${config.gemini.model} (${config.gemini.apiKey ? 'Configured ✅' : 'Missing API Key ❌'})
 📦 Supabase:       ${config.supabase.url ? 'Connected ✅' : 'Local Fallback 📦'}
 ===========================================================
-      `);
-    });
-  } catch (err) {
-    console.error('Failed to start server:', err);
-    process.exit(1);
-  }
+        `);
+      });
+    } catch (err) {
+      console.error('Failed to start server:', err);
+      process.exit(1);
+    }
+  })();
 }
-
-start();
